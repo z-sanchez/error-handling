@@ -1,3 +1,6 @@
+// @ts-nocheck
+/* eslint-disable no-var */
+//need these becuase we're causing legit errors on purpose
 import dotenv from "dotenv";
 // ALLOWS ENVIRONMENT VARIABLES TO BE SET ON PROCESS.ENV SHOULD BE AT TOP
 dotenv.config();
@@ -5,7 +8,6 @@ import cors from "cors";
 import express, { Request, Response } from "express";
 import { errorHandler } from "./middleware/errorHandler";
 import { tryCatch } from "./utils/tryCatch";
-import { AppError } from "./AppError";
 
 const app = express();
 
@@ -17,24 +19,64 @@ app.use(
 
 app.use(express.json()); // parse json bodies in the request object
 
-const getUser = (): undefined => undefined;
-
 app.get(
   "/evalError",
   tryCatch(async (req: Request, res: Response) => {
-    eval('console.log("Hello"');
+    //error is not really thrown in modern javascript, so manually doing it here
+    //however if it is passed invalid code it will throw errors that are caused by the passed code
+    throw new EvalError("This is an eval error");
     return res.status(200).json({ success: true });
   })
 );
 
 app.get(
-  "/error",
+  "/uriError",
   tryCatch(async (req: Request, res: Response) => {
-    const user = getUser();
+    //these lines would be okay. encodeURI will protect whatever string passed from being changed by encoding it
+    // const uri = "https://mozilla.org/?x=шеллы";
+    // const encoded = encodeURI(uri);
 
-    if (!user) {
-      throw new AppError(111, "No User Found!", 400);
-    }
+    //this does not use URI formatting. So error will be thrown
+    decodeURIComponent("%%");
+
+    return res.status(200).json({ success: true });
+  })
+);
+
+app.get(
+  "/typeError",
+  tryCatch(async (req: Request, res: Response) => {
+    const aNumber = 234;
+
+    aNumber();
+    return res.status(200).json({ success: true });
+  })
+);
+
+app.get(
+  "/referenceError",
+  tryCatch(async (req: Request, res: Response) => {
+    const aNumber = 234;
+    bNumber();
+    return res.status(200).json({ success: true });
+  })
+);
+
+app.get(
+  "/syntaxError",
+  tryCatch(async (req: Request, res: Response) => {
+    eval("hoo bar");
+
+    return res.status(200).json({ success: true });
+  })
+);
+
+app.get(
+  "/rangeError",
+  tryCatch(async (req: Request, res: Response) => {
+    const num = 1;
+
+    num.toPrecision(500);
 
     return res.status(200).json({ success: true });
   })
