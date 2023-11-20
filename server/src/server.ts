@@ -20,14 +20,9 @@ app.use(express.json()); // parse json bodies in the request object
 const getUser = (): undefined => undefined;
 
 app.get(
-  "/test",
+  "/evalError",
   tryCatch(async (req: Request, res: Response) => {
-    const user = getUser();
-
-    if (!user) {
-      throw new AppError(123, "Thing not found", 400);
-    }
-
+    eval('console.log("Hello"');
     return res.status(200).json({ success: true });
   })
 );
